@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card p-4 shadow-sm">
+        <h2 class="mb-4">Listado de tickets</h2>
+
+        {% if tickets %}
+            <table class="table table-bordered table-striped">
+                <thead class="table-light">
+                    <tr>
+                        <th>Codigo</th>
+                        <th>Entradas</th>
+                        <th>Tipo</th>
+
+                </thead>
+                <tbody>
+                    {% for ticket in tickets %}
+
+                        <tr>
+                            <td>{{ ticket.ticket_code }}</td>
+                            <td>{{ ticket.quantity }}</td>
+                            <td>{{ ticket.type }}</td>
+
+                            <td>
+                                <a href="{% url 'update_ticket' ticket.id %}"
+                                 class="btn btn-sm btn-outline-secondary"
+                                 aria-label="Editar"
+                                 title="Editar">
+                                 <i class="bi bi-pencil" aria-hidden="true"></i>
+                                </a>
+
+                                <a href="{% url 'delete_ticket' ticket.id %}"
+                                 class="btn btn-sm btn-outline-danger"
+                                 onclick="return confirm('¿Seguro que deseas eliminar esta ubicación?');"
+                                 title="Eliminar"
+                                 aria-label="Eliminar">
+                                 <i class="bi bi-trash" aria-hidden="true"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="alert alert-info">
+                No hay tickets registrados.
+            </div>
+        {% endif %}
+
+        <a href="{% url 'create_ticket' %}" class="btn btn-primary mt-4">Comprar entrada</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="row">
+    <!-- Columna izquierda: Formulario de compra -->
+    <div class="col-lg-8 mb-4">
+      <div class="card p-4">
+        <h4 class="card-header">Comprar entrada</h4>
+        <form action="{% url 'create_ticket' %}" method="post">
+          {% csrf_token %}
+          <div>
+            <label for="event" class="form-label">Evento</label>
+            <select class="form-select" name="event" id="event">
+                <option value="">Seleccionar evento</option>
+                {% for event in events %}
+                    <option value="{{ event.id }}" {% if event.title and event.title.id == event.title %}selected{% endif %}>
+                      {{ event.title }}
+                    </option>
+                {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label for="quantity">Cantidad de entradas</label>
+            <input type="number" id="quantity" name="quantity" min="1" value="1"> 
+            <!--<small>Disponibles: 120 entradas</small>-->
+          </div>
+          <div>
+            <label for="type" class="form-label">Tipo</label>
+            <select class="form-select" name="type" id="type">
+                <option value="">Seleccionar tipo de entrada</option>
+                {% for ticket in tickets %}
+                    <option value="{{ ticket.type }}">
+                      {{ ticket.type }}
+                    </option>
+                {% endfor %}
+            </select>
+          </div>
+ <!--
+            <h3>Método de pago</h3>
+            <div class="form-group">
+              <label for="card_number">Número de tarjeta</label>
+              <input type="text" id="card_number" name="card_number" placeholder="1234 5678 9012 3456">
+            </div>
+      
+            <div class="form-group card-fields">
+              <div>
+                <label for="expiration">Fecha de expiración</label>
+                <input type="text" id="expiration" name="expiration" placeholder="MM/AA">
+              </div>
+              <div>
+                <label for="cvv">CVV</label>
+                <input type="text" id="cvv" name="cvv" placeholder="123">
+              </div>
+            </div>
+      
+            <div class="form-group">
+              <label for="card_name">Nombre en la tarjeta</label>
+              <input type="text" id="card_name" name="card_name" placeholder="Juan Pérez">
+            </div>-->
+
+            <div class="form-check my-3">
+              <input class="form-check-input" type="checkbox" id="terms" onchange="toggleButton()">
+              <label class="form-check-label" for="terms">
+                Acepto los <a href="#">términos y condiciones</a>
+              </label>
+            </div>
+      
+            <button id="submit-btn" class="btn btn-secondary" type="submit" disabled>
+              Confirmar compra
+            </button>
+
+        </form>
+      </div>
+    </div>
+
+    <!-- Columna derecha: Resumen e info -->
+    <div class="col-lg-4">
+      <div class="card p-3 mb-4">
+        <h4 class="card-header">Resumen de compra</h4>
+                <div class="card-body">
+                  <li>Precio por entrada:</li>
+                  <li>Cantidad:</li>
+                  <li>Subtotal:</li>
+                  <li>Impuestos (10%):</li>
+                  <li class="total">Total:</li>
+              </div>
+        </div>
+
+      <div class="card p-3 mb-4">
+        <h4  class="card-header">Información importante</h4>
+        <ul class="list-unstyled mt-2">
+          <li><i class="bi bi-info-circle text-primary"></i> Las entradas son personales e intransferibles.</li>
+          <li><i class="bi bi-clock text-primary"></i> Puedes solicitar un reembolso hasta 48 horas antes del evento.</li>
+          <li><i class="bi bi-envelope text-primary"></i> Recibirás tu entrada en tu correo electrónico.</li>
+          <li><i class="bi bi-phone text-primary"></i> Presenta tu entrada digital o impresa el día del evento.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+<script>
+  function toggleButton() {
+    const checkbox = document.getElementById('terms');
+    const button = document.getElementById('submit-btn');
+
+    if (checkbox.checked) {
+      button.disabled = false;
+      button.classList.remove('btn-secondary');
+      button.classList.add('btn-primary');
+    } else {
+      button.disabled = true;
+      button.classList.remove('btn-primary');
+      button.classList.add('btn-secondary');
+    }
+  }
+</script>
+
+{% endblock %}
+

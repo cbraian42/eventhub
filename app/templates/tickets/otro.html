@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+
+@classmethod
+def validate(cls, buy_date, quantity, type):
+    errors = {}
+
+    if not buy_date:
+        errors["buy_date"] = "La fecha es requerida."
+
+    if not type:
+        errors["type"] = "El tipo es requerido."
+    
+    if quantity is None:
+        errors["quantity"] = "La cantidad es requerida."
+    elif quantity <= 0:
+        errors["quantity"] = "La cantidad debe ser un número positivo."
+
+    return errors
+    
+{% block content %}
+
+  
+<div class="container">
+  
+  <div class="form-section">
+    <h2>Comprar Entrada</h2>
+    <p>{{ event.title }}<br>
+    📅 {{ event.scheduled_at }}<br>
+    📍{{ event.location }}<br>
+    🎤 {{ event.organizer }}</p>
+
+    <form>
+      <div class="form-group">
+        <label for="quantity">Cantidad de entradas</label>
+        <input type="number" id="quantity" name="quantity" min="1" value="1">
+        <!--<small>Disponibles: 120 entradas</small>-->
+      </div>
+
+      <div class="form-group">
+        <label for="type">Tipo de entrada</label>
+        <select id="type" name="type">
+          <option value="general">Entrada General</option>
+          <option value="vip">Entrada VIP</option>
+        </select>
+      </div>
+    </form>
+
+    <form>
+
+      <h3>Método de pago</h3>
+
+      <div class="form-group">
+        <label for="card_number">Número de tarjeta</label>
+        <input type="text" id="card_number" name="card_number" placeholder="1234 5678 9012 3456">
+      </div>
+
+      <div class="form-group card-fields">
+        <div>
+          <label for="expiration">Fecha de expiración</label>
+          <input type="text" id="expiration" name="expiration" placeholder="MM/AA">
+        </div>
+        <div>
+          <label for="cvv">CVV</label>
+          <input type="text" id="cvv" name="cvv" placeholder="123">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="card_name">Nombre en la tarjeta</label>
+        <input type="text" id="card_name" name="card_name" placeholder="Juan Pérez">
+      </div>
+
+      <div class="form-check my-3">
+        <input class="form-check-input" type="checkbox" id="terms" onchange="toggleButton()">
+        <label class="form-check-label" for="terms">
+          Acepto los <a href="#">términos y condiciones</a>
+        </label>
+      </div>
+
+      <button id="submit-btn" class="btn btn-secondary" type="submit" disabled>
+        Confirmar compra
+      </button>
+    </form>
+  </div>
+
+  <div class="summary-section">
+    <div class="summary-box">
+      <h4 class="card-header">Resumen de compra</h4>
+      <div class="card-body">
+        <li>Precio por entrada:</li>
+        <li>Cantidad:</li>
+        <li>Subtotal:</li>
+        <li>Impuestos (10%):</li>
+        <li class="total">Total:</li>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <h4 class="card-header">Información importante</h4>
+      <ul>
+        <li>Las entradas son personales e intransferibles.</li>
+        <li>Puedes solicitar un reembolso hasta 48 horas antes del evento.</li>
+        <li>Recibirás tu entrada en tu correo electrónico.</li>
+        <li>Presenta tu entrada digital o impresa el día del evento.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+.container {
+  display: flex;
+  margin: auto;
+}
+
+  .form-section, .summary-section {
+    background: #fff;
+    box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    flex: 1;
+  }
+ 
+  label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 0.3rem;
+  }
+  input[type="text"],
+  input[type="number"],
+  select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  .card-fields {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1rem;
+  }
+  .card-fields input {
+    width: 100%;
+  }
+  .checkbox {
+    margin: 1rem 0;
+  }
+  .checkbox label {
+    font-weight: normal;
+  }
+  button {
+    width: 100%;
+    color: white;
+    border: none;
+    padding: 1rem;
+    cursor: pointer;
+  }
+
+  .summary-box div {
+    display: flex;
+    justify-content: space-between;
+    margin: 0.3rem 0;
+  }
+  .total {
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-top: 1rem;
+  }
+  ul {
+    padding-left: 1.2rem;
+  }
+<style>
+
+  .container {
+    display: flex;
+    gap: 2rem;
+    max-width: 1000px;
+    margin: auto;
+  }
+  .form-section, .summary-section {
+    background: #fff;
+    border-radius: 8px;
+    padding: 2rem;
+    box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    flex: 1;
+  }
+  h2 {
+    margin-bottom: 1rem;
+  }
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 0.3rem;
+  }
+  input[type="text"],
+  input[type="number"],
+  select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  .card-fields {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1rem;
+  }
+  .card-fields input {
+    width: 100%;
+  }
+  .checkbox {
+    margin: 1rem 0;
+  }
+  .checkbox label {
+    font-weight: normal;
+  }
+  button {
+    width: 100%;
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 1rem;
+    font-size: 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .summary-box, .info-box {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  .summary-box div {
+    display: flex;
+    justify-content: space-between;
+    margin: 0.3rem 0;
+  }
+  .total {
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-top: 1rem;
+  }
+  ul {
+    padding-left: 1.2rem;
+  }
+
+</style>
+
+<script>
+  function toggleButton() {
+    const checkbox = document.getElementById('terms');
+    const button = document.getElementById('submit-btn');
+
+    if (checkbox.checked) {
+      button.disabled = false;
+      button.classList.remove('btn-secondary');
+      button.classList.add('btn-primary');
+    } else {
+      button.disabled = true;
+      button.classList.remove('btn-primary');
+      button.classList.add('btn-secondary');
+    }
+  }
+</script>
+
+{% endblock %}

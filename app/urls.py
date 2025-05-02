@@ -28,4 +28,8 @@ urlpatterns = [
     path('notifications/<int:notification_user_id>/mark_read/', views.read_notification, name='read_notification'),
     path('notifications/mark_read_all/', views.read_all_notifications, name='read_all_notifications'),
     path('notifications/<int:notification_id>/delete/', views.delete_notification, name='delete_notification'),
+    path('tickets/', views.list_tickets, name='list_tickets'),
+    path('tickets/new', views.create_ticket, name='create_ticket'),
+    path('tickets/<int:ticket_id>/edit/', views.update_ticket, name='update_ticket'),
+    path('tickets/<int:ticket_id>/delete/', views.delete_ticket, name='delete_ticket'),
 ]

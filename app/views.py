@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.db.models import Count
-from .models import Event, User, Location, Category, Notification, NotificationXUser
+from .models import Event, User, Location, Category, Notification, NotificationXUser, Ticket
 
 
 def register(request):
@@ -357,3 +357,51 @@ def read_notification(request, notification_user_id):
 def read_all_notifications(request):
     NotificationXUser.objects.filter(user=request.user, is_read=False).update(is_read=True)
     return redirect('list_notifications')
+
+@login_required
+def list_tickets(request):
+    tickets = Ticket.objects.all()
+    return render(request, 'tickets/list_tickets.html', {'tickets': tickets})
+
+@login_required
+def create_ticket(request):
+    if request.method == 'POST':
+        buy_date = request.POST.get('buy_date')
+        quantity = request.POST.get('quantity')
+        type = request.POST.get('type')
+         # Validar datos
+
+       
+        # Si no hay errores, creamos la Location
+        Ticket.new(buy_date, type, int(quantity))
+        return redirect('list_tickets')  # Redirigimos a una lista o donde quieras
+
+    events = Event.objects.all()
+    return render(request, 'tickets/create_ticket.html', {"events" : events})
+
+@login_required
+def update_ticket(request, ticket_id):
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+    if request.method == 'POST':
+        buy_date = request.POST.get('name')
+        quantity = request.POST.get('address')
+        type = request.POST.get('city')
+
+        errors = Ticket.validate(buy_date, type, int(quantity) if quantity else None)
+        
+        if errors:
+            return render(request, 'locations/update_ticket.html', {
+                'ticket': ticket,
+                'errors': errors,
+                'form_data': request.POST,
+            })
+        ticket.update(buy_date=buy_date, type=type, quantity=int(quantity))
+        return redirect('list_tickets')
+
+    return render(request, 'tickets/update_ticket.html', {'ticket': ticket})
+
+@login_required
+def delete_ticket(request, ticket_id):
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+    ticket.delete()
+    return redirect('list_tickets')
