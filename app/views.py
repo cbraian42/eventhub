@@ -167,6 +167,7 @@ def event_form(request, id=None):
     if request.method == "POST":
         title = request.POST.get("title")
         description = request.POST.get("description")
+        status = request.POST.get("status")
         date = request.POST.get("date")
         time = request.POST.get("time")
         location_id = request.POST.get("location")
@@ -179,7 +180,6 @@ def event_form(request, id=None):
 
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
-
         # Guardar el datetime como aware en la zona horaria local y convertir a UTC
         naive_datetime = datetime.datetime(int(year), int(month), int(day), int(hour), int(minutes))
         local_tz = pytz.timezone(settings.TIME_ZONE)
@@ -187,10 +187,12 @@ def event_form(request, id=None):
         scheduled_at = local_aware_datetime.astimezone(pytz.UTC)
 
         if id is None:
-            event, errors = Event.new(title, description, scheduled_at, request.user, location)
+            event, errors = Event.new(title, description, scheduled_at, request.user, location, status=status)
         else:
             event = get_object_or_404(Event, pk=id)
-            event.update(title, description, scheduled_at, request.user, location)
+            if event.scheduled_at != scheduled_at:
+                status = 'reprogramado'
+            event.update(title, description, scheduled_at, request.user, status, location)
 
         if event:
             if price_general is not None:

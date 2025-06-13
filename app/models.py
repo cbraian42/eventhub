@@ -157,6 +157,7 @@ class Event(models.Model):
     price_vip = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'))
     tickets_total = models.PositiveIntegerField(default=0)
     tickets_sold = models.PositiveIntegerField(default=0)
+    status = models.CharField(max_length=30)
 
     @property
     def tickets_available(self):
@@ -211,7 +212,7 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer, location=None, price_general=Decimal('0.00'), price_vip=Decimal('0.00'), tickets_sold=0):
+    def new(cls, title, description, scheduled_at, organizer, location=None, price_general=Decimal('0.00'), price_vip=Decimal('0.00'), tickets_sold=0, status='activo'):
         errors = Event.validate(title, description, scheduled_at)
 
         if len(errors.keys()) > 0:
@@ -229,11 +230,12 @@ class Event(models.Model):
             location=location,
             price_general=price_general,
             price_vip=price_vip,
+            status=status,
         )
 
         return event, None
 
-    def update(self, title, description, scheduled_at, organizer, location=None, price_general=Decimal('0.00'), price_vip=Decimal('0.00')):
+    def update(self, title, description, scheduled_at, organizer, status, location=None, price_general=Decimal('0.00'), price_vip=Decimal('0.00')):
         self.title = title or self.title
         self.description = description or self.description
         
@@ -246,7 +248,7 @@ class Event(models.Model):
         self.location = location if location is not None else self.location
         self.price_general = price_general or self.price_general
         self.price_vip = price_vip or self.price_vip
-
+        self.status = status or self.status
         self.save()
 
 class EventCategory(models.Model):

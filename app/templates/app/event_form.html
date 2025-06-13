@@ -39,6 +39,18 @@
                                     rows="4"
                                     required="">{{ event.description }}</textarea>
                             </div>
+                            {% if event.id %}
+                                <div>
+                                    <label for="status" class="form-label">Estado</label>
+                                <select class="form-select" name="status" id="status">
+                                    <option value="activo" {% if event.status == 'activo' %}selected{% endif %}>Activo</option>
+                                    <option value="cancelado" {% if event.status == 'cancelado' %}selected{% endif %}>Cancelado</option>
+                                    <option value="reprogramado" {% if event.status == 'reprogramado' %}selected{% endif %}>Reprogramado</option>
+                                    <option value="agotado" {% if event.status == 'agotado' %}selected{% endif %}>Agotado</option>
+                                    <option value="finalizado" {% if event.status == 'finalizado' %}selected{% endif %}>Finalizado</option>
+                                </select>
+                                </div>
+                            {% endif %}
                             <div class="row">
                                 <div class="col-md-6">
                                     <label for="date" class="form-label">Fecha</label>
