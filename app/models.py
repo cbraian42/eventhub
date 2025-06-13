@@ -4,8 +4,9 @@ from decimal import Decimal
 import uuid
 from django.conf import settings
 from django.utils import timezone
-from django.db.models import Sum
+from django.db.models import F
 from django.db import transaction
+from django.core.exceptions import ValidationError
 
 class User(AbstractUser):
     is_organizer = models.BooleanField(default=False)
@@ -159,20 +160,23 @@ class Event(models.Model):
     tickets_sold = models.PositiveIntegerField(default=0)
     status = models.CharField(max_length=30)
 
-    @property
-    def tickets_available(self):
-        sold = Ticket.objects.filter(event=self).aggregate(total=Sum('quantity'))['total'] or 0
-        return self.tickets_total - sold
 
     def __str__(self):
         return self.title
 
+    @property
+    def tickets_available(self):
+        return max(0, self.tickets_total - self.tickets_sold)
+    
+    def clean(self):
+        if self.tickets_sold > self.tickets_total:
+            raise ValidationError({
+                'tickets_sold': 'No pueden haberse vendido más tickets que el total disponible'
+            })
+    
     def save(self, *args, **kwargs):
-        # Validar datos antes de guardar
-        self.full_clean()
-        # Asegurar que scheduled_at sea aware antes de guardar
-        if self.scheduled_at and not timezone.is_aware(self.scheduled_at):
-            self.scheduled_at = timezone.make_aware(self.scheduled_at)
+        if self.tickets_sold > self.tickets_total:
+            self.tickets_sold = self.tickets_total
         super().save(*args, **kwargs)
     
 
@@ -407,28 +411,32 @@ class Ticket(models.Model):
         return self.total_before_discount - self.discount_amount
     
     def save(self, *args, **kwargs):
-        # Primero calculamos el precio
         if self.event:
             self.price_per_ticket = Decimal(str(
                 self.event.price_vip if self.type == 'vip' 
                 else self.event.price_general
             ))
         
-        # Si es un nuevo ticket y no tiene código
         if not self.pk and not self.ticket_code:
             self.ticket_code = f"TKT-{uuid.uuid4().hex[:6].upper()}"
         
-        # Guardamos una sola vez con todo listo
         with transaction.atomic():
+            is_new = not self.pk
             super().save(*args, **kwargs)
-
+            
+            # Actualizar contador de tickets vendidos SOLO si es un nuevo ticket
+            if is_new and self.event:
+                Event.objects.filter(id=self.event.id).update(
+                    tickets_sold=F('tickets_sold') + self.quantity
+                )
 
     def delete(self, *args, **kwargs):
-        # Restar tickets vendidos al eliminar
-        if self.event:
-            self.event.tickets_sold -= self.quantity
-            self.event.save()
-        super().delete(*args, **kwargs)
+        with transaction.atomic():
+            if self.event:
+                Event.objects.filter(id=self.event.id).update(
+                    tickets_sold=F('tickets_sold') - self.quantity
+                )
+            super().delete(*args, **kwargs)
 
     @classmethod
     def validate(cls, user, event, quantity, ticket_type, card_type):

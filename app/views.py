@@ -6,12 +6,12 @@ from django.contrib import messages
 from django.db.models import Count
 from .models import Event, User, Location, Category, Notification, NotificationXUser, Comments, Ticket, Coupon
 from .forms import TicketForm, TicketFilterForm, CouponForm
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.conf import settings
 import pytz
-from django.http import JsonResponse
 from decimal import Decimal
 from django.utils import timezone
+from django.db import transaction
 
 def register(request):
     if request.method == "POST":
@@ -616,11 +616,13 @@ def buy_ticket_from_event(request, event_id):
         else:
             form = TicketForm(request.POST, fixed_event=True, event_instance=event)
             if form.is_valid():
-                # VERIFICAR DISPONIBILIDAD ANTES DE COMPRAR
                 quantity = form.cleaned_data['quantity']
-                if event.tickets_available < quantity:
-                    messages.error(request, "No hay suficientes tickets disponibles")
-                    return redirect('buy_ticket_from_event', event_id=event.id)
+                # Verificación atómica de disponibilidad
+                with transaction.atomic():
+                    event = Event.objects.select_for_update().get(id=event_id)
+                    if event.tickets_available < quantity:
+                        messages.error(request, "No hay suficientes tickets disponibles")
+                        return redirect('buy_ticket_from_event', event_id=event.id)
                 
                 ticket = form.save(commit=False)
                 ticket.user = request.user
