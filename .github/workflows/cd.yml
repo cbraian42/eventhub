@@ -1,8 +1,5 @@
 name: CD
 
-# Este workflow se ejecuta cuando:
-# 1. Se crea una release 
-# 2. Se mergea un PR a main después de que CI pase 
 on:
   release:
     types: [published]
@@ -17,13 +14,11 @@ jobs:
   # Verificar que CI pasó exitosamente
   check-ci:
     runs-on: ubuntu-latest
-    # Solo ejecutar si el workflow de CI fue exitoso
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: CI passed successfully
         run: echo "✅ CI pasó exitosamente, procediendo con deployment"
 
-  jobs:
   # DEPLOY AL CREAR UNA RELEASE
   deploy-on-release:
     if: ${{ github.event_name == 'release' }}
@@ -57,7 +52,6 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     name: Deploy after CI success
-    needs: []
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
