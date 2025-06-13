@@ -23,27 +23,23 @@ jobs:
       - name: CI passed successfully
         run: echo "✅ CI pasó exitosamente, procediendo con deployment"
 
-  # Deploy
-  deploy:
-    name: Deploy
-    needs: check-ci
+  jobs:
+  # DEPLOY AL CREAR UNA RELEASE
+  deploy-on-release:
+    if: ${{ github.event_name == 'release' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-          
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        
       - name: Get the date
         run: echo "date=$(date '+%Y%m%d%H%M%S')" >> $GITHUB_ENV
-        
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
@@ -53,6 +49,35 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/eventhub-app:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/eventhub-app:${{ env.date }}
-            
+      - name: Deploy to Render
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+
+  # DEPLOY AL MERGEAR A MAIN DESPUÉS DE CI
+  deploy-on-ci:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    name: Deploy after CI success
+    needs: []
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Get the date
+        run: echo "date=$(date '+%Y%m%d%H%M%S')" >> $GITHUB_ENV
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/eventhub-app:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/eventhub-app:${{ env.date }}
       - name: Deploy to Render
         run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
