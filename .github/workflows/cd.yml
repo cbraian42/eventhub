@@ -47,8 +47,8 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/eventhub-app:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/eventhub-app:${{ env.date }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/eventhub:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/eventhub:${{ env.date }}
       - name: Deploy to Render
         run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
 
@@ -77,7 +77,7 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/eventhub-app:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/eventhub-app:${{ env.date }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/eventhub:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/eventhub:${{ env.date }}
       - name: Deploy to Render
         run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
