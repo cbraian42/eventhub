@@ -91,12 +91,14 @@ class EventModelTest(TestCase):
         new_title = "Título actualizado"
         new_description = "Descripción actualizada"
         new_scheduled_at = timezone.now() + datetime.timedelta(days=3)
+        new_status = "reprogramado"
 
         event = Event.objects.create(
             title="Evento de prueba",
             description="Descripción del evento de prueba",
             scheduled_at=timezone.now() + datetime.timedelta(days=1),
             organizer=self.organizer,
+            status="activo",
         )
 
         event.update(
@@ -104,6 +106,7 @@ class EventModelTest(TestCase):
             description=new_description,
             scheduled_at=new_scheduled_at,
             organizer=self.organizer,
+            status=new_status,
         )
 
         # Recargar el evento desde la base de datos
@@ -131,6 +134,7 @@ class EventModelTest(TestCase):
             description=new_description,
             scheduled_at=None,  # No cambiar
             organizer=None,  # No cambiar
+            status=None,  # No cambiar
         )
 
         # Recargar el evento desde la base de datos

@@ -158,6 +158,7 @@ class Event(models.Model):
     price_vip = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'))
     tickets_total = models.PositiveIntegerField(default=0)
     tickets_sold = models.PositiveIntegerField(default=0)
+    status = models.CharField(max_length=30)
 
 
     def __str__(self):
@@ -215,7 +216,7 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer, location=None, price_general=Decimal('0.00'), price_vip=Decimal('0.00'), tickets_sold=0):
+    def new(cls, title, description, scheduled_at, organizer, location=None, price_general=Decimal('0.00'), price_vip=Decimal('0.00'), tickets_sold=0, status='activo'):
         errors = Event.validate(title, description, scheduled_at)
 
         if len(errors.keys()) > 0:
@@ -233,24 +234,38 @@ class Event(models.Model):
             location=location,
             price_general=price_general,
             price_vip=price_vip,
+            status=status,
         )
 
         return event, None
 
-    def update(self, title, description, scheduled_at, organizer, location=None, price_general=Decimal('0.00'), price_vip=Decimal('0.00')):
+    def update(self, title, description, scheduled_at, organizer, status, location=None, price_general=Decimal('0.00'), price_vip=Decimal('0.00')):
         self.title = title or self.title
         self.description = description or self.description
-        
-        # Asegurar que scheduled_at sea aware
+
         if scheduled_at and not timezone.is_aware(scheduled_at):
             scheduled_at = timezone.make_aware(scheduled_at)
-        self.scheduled_at = scheduled_at or self.scheduled_at
-        
+        fecha_anterior = self.scheduled_at
+
+        # Normaliza ambos datetimes a minutos para comparar
+        def normalize(dt):
+            return dt.replace(second=0, microsecond=0) if dt else None
+
+        fecha_anterior_norm = normalize(fecha_anterior)
+        scheduled_at_norm = normalize(scheduled_at)
+
+        # Si la fecha cambió (ignorando segundos y microsegundos), reprogramar
+        if scheduled_at and fecha_anterior_norm != scheduled_at_norm:
+            self.scheduled_at = scheduled_at
+            self.status = 'reprogramado'
+        # Si la fecha NO cambió, usar el status enviado (si viene)
+        elif status is not None:
+            self.status = status
+
         self.organizer = organizer or self.organizer
         self.location = location if location is not None else self.location
         self.price_general = price_general or self.price_general
         self.price_vip = price_vip or self.price_vip
-
         self.save()
 
 class EventCategory(models.Model):
@@ -427,6 +442,11 @@ class Ticket(models.Model):
                 Event.objects.filter(id=self.event.id).update(
                     tickets_sold=F('tickets_sold') + self.quantity
                 )
+                # Recargar el evento actualizado
+                self.event.refresh_from_db()
+                if self.event.tickets_sold >= self.event.tickets_total:
+                    self.event.status = 'agotado'
+                    self.event.save(update_fields=['status'])
 
     def delete(self, *args, **kwargs):
         with transaction.atomic():

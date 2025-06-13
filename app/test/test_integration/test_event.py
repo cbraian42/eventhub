@@ -199,6 +199,7 @@ class EventFormSubmissionTest(BaseEventTestCase):
             "description": "Descripción del nuevo evento",
             "date": "2025-05-01",
             "time": "14:30",
+            "status": "activo",
         }
 
         # Hacer petición POST para crear el evento
