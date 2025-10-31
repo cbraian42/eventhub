@@ -8,6 +8,7 @@
 
 # Eventhub
 
+Deploy en: https://eventhub-k9g9.onrender.com/
 Aplicación web para venta de entradas utilizada en la cursada 2025 de Ingeniería y Calidad de Software. UTN-FRLP
 
 ## Dependencias
