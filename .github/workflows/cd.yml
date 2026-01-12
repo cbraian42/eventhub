@@ -11,67 +11,90 @@ on:
       - main
 
 jobs:
-  # Verificar que CI pasó exitosamente
-  check-ci:
+  # Verificar CI antes de deploy en release
+  check-ci-release:
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
-      - name: CI passed successfully
-        run: echo "✅ CI pasó exitosamente, procediendo con deployment"
+      - name: Check CI status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: checks } = await github.rest.checks.listForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.payload.release.tag_name
+            });
+            
+            const ciPassed = checks.check_runs.some(check => 
+              check.conclusion === 'success' && check.name.includes('CI')
+            );
+            
+            if (!ciPassed) {
+              core.setFailed('CI must pass before deployment');
+            }
 
   # DEPLOY AL CREAR UNA RELEASE
   deploy-on-release:
-    if: ${{ github.event_name == 'release' }}
+    if: github.event_name == 'release'
+    needs: check-ci-release
     runs-on: ubuntu-latest
+    name: Deploy on Release
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+          
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        
       - name: Get the date
         run: echo "date=$(date '+%Y%m%d%H%M%S')" >> $GITHUB_ENV
+        
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
           push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/eventhub:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/eventhub:${{ env.date }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/eventhub:latest,${{ secrets.DOCKERHUB_USERNAME }}/eventhub:${{ env.date }}
+          
       - name: Deploy to Render
         run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
 
   # DEPLOY AL MERGEAR A MAIN DESPUÉS DE CI
   deploy-on-ci:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     name: Deploy after CI success
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+          
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        
       - name: Get the date
         run: echo "date=$(date '+%Y%m%d%H%M%S')" >> $GITHUB_ENV
+        
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
           push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/eventhub:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/eventhub:${{ env.date }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/eventhub:latest,${{ secrets.DOCKERHUB_USERNAME }}/eventhub:${{ env.date }}
+          
       - name: Deploy to Render
         run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
